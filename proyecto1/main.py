@@ -1,4 +1,32 @@
-from afd import * 
+from proyecto1.afd import * 
+def get_simulator(regex:str)->AFD:
+    POINT = {'.': '\\.'}
+    regex = ''.join([POINT.get(a, a) for a in regex])
+    postfix = shunting_yard(regex)
+    nfa = regex_to_nfa(postfix)
+    afd = AFD(nfa)
+    afd.minimizing()
+    return afd
+
+class Simulator:
+    def __init__(self, regex:str) -> None:
+        self.afd = get_simulator(regex)
+        self.escaped = {
+            '?': '\\?',
+            '*': '\\*',
+            '+': '\\+',
+            '(': '\\(',
+            ')': '\\)',
+            '{': '\\{',
+            '}': '\\}',
+            '|': '\\|',
+            'ε': '\\ε',
+            '.': '\\.'
+        }
+
+    def simulate(self, text:str) -> bool:
+        return self.afd.simulate(''.join([self.escaped.get(a, a) for a in text]))
+
 
 if __name__ == "__main__":
     filename = input("Nombre del archivo: ")
@@ -13,11 +41,11 @@ if __name__ == "__main__":
                         print(f"Original: {line}")
                         print(f"Postfix: {postfix}")
                         nfa = regex_to_nfa(postfix)
-                        nfa.plot()
+                        # nfa.plot()
                         afd = AFD(nfa)
-                        afd.plot()
+                        # afd.plot()
                         afd.minimizing()
-                        afd.plot()
+                        # afd.plot()
                         while True:
                             try:
                                 ex = input("Expresión: ")

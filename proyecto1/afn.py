@@ -1,8 +1,8 @@
-from infix2postfix import * 
+from proyecto1.infix2postfix import * 
 
 from collections import deque
-import networkx as nx
-import matplotlib.pyplot as plt
+# import networkx as nx
+# import matplotlib.pyplot as plt
 
 EPSILON = "ε"
 
@@ -115,7 +115,7 @@ class NFA:
             start.transitions[node.value] = {accept}
             return NFA(start, accept)
     
-    def simulate(self, input_string):
+    def simulate(self, input_string:str)->bool:
         """Simula el automata"""
         current_states = _epsilon_closure({self.start})
         
@@ -139,68 +139,68 @@ class NFA:
         return any(state == self.accept for state in current_states)
     
     
-    def to_graph(self):
-        """AFN a grafo de NetworkX"""
-        G = nx.MultiDiGraph()
-        visited = set()
-        stack = [self.start]
+    # def to_graph(self):
+    #     """AFN a grafo de NetworkX"""
+    #     G = nx.MultiDiGraph()
+    #     visited = set()
+    #     stack = [self.start]
         
-        while stack:
-            state = stack.pop()
-            if state.id in visited:
-                continue
-            visited.add(state.id)
+    #     while stack:
+    #         state = stack.pop()
+    #         if state.id in visited:
+    #             continue
+    #         visited.add(state.id)
             
-            G.add_node(state.id, label="")
+    #         G.add_node(state.id, label="")
             
-            # Add epsilon transitions
-            for eps_state in state.epsilon_transitions:
-                G.add_edge(state.id, eps_state.id, label=EPSILON)
-                if eps_state.id not in visited:
-                    stack.append(eps_state)
+    #         # Add epsilon transitions
+    #         for eps_state in state.epsilon_transitions:
+    #             G.add_edge(state.id, eps_state.id, label=EPSILON)
+    #             if eps_state.id not in visited:
+    #                 stack.append(eps_state)
             
-            # Add character transitions
-            for char, targets in state.transitions.items():
-                for target in targets:
-                    G.add_edge(state.id, target.id, label=char)
-                    if target.id not in visited:
-                        stack.append(target)
+    #         # Add character transitions
+    #         for char, targets in state.transitions.items():
+    #             for target in targets:
+    #                 G.add_edge(state.id, target.id, label=char)
+    #                 if target.id not in visited:
+    #                     stack.append(target)
         
-        return G
+    #     return G
     
-    def plot(self):
-        """Visualizar"""
-        G = self.to_graph()
+    # def plot(self):
+    #     """Visualizar"""
+    #     G = self.to_graph()
         
-        pos = nx.spring_layout(G)
+    #     pos = nx.spring_layout(G)
         
-        node_colors = []
-        for node in G.nodes():
-            if node == self.start.id:
-                node_colors.append('lightgreen')  # Inicio
-            elif node == self.accept.id:
-                node_colors.append('lightcoral')  # Terminal
-            else:
-                node_colors.append('skyblue')  # Estado
+    #     node_colors = []
+    #     for node in G.nodes():
+    #         if node == self.start.id:
+    #             node_colors.append('lightgreen')  # Inicio
+    #         elif node == self.accept.id:
+    #             node_colors.append('lightcoral')  # Terminal
+    #         else:
+    #             node_colors.append('skyblue')  # Estado
         
-        nx.draw_networkx_nodes(G, pos, node_color=node_colors, node_size=300)
+    #     nx.draw_networkx_nodes(G, pos, node_color=node_colors, node_size=300)
 
-        nx.draw_networkx_edges(G, pos, arrowstyle='->', arrowsize=20, connectionstyle='arc3,rad=0.2')
+    #     nx.draw_networkx_edges(G, pos, arrowstyle='->', arrowsize=20, connectionstyle='arc3,rad=0.2')
         
-        label_pos = [0.3, 0.1, 0.2] 
-        edge_labels = {(u, v, k): d['label'] for u, v, k, d in G.edges(keys=True, data=True)}
-        for i, ((u, v, k), label) in enumerate(edge_labels.items()):
-            nx.draw_networkx_edge_labels(G, pos, {(u, v, k): label}, 
-                                label_pos=label_pos[i % len(label_pos)])
-        # nx.draw_networkx_edge_labels(G, pos, label_pos=0.15, edge_labels=edge_labels)
+    #     label_pos = [0.3, 0.1, 0.2] 
+    #     edge_labels = {(u, v, k): d['label'] for u, v, k, d in G.edges(keys=True, data=True)}
+    #     for i, ((u, v, k), label) in enumerate(edge_labels.items()):
+    #         nx.draw_networkx_edge_labels(G, pos, {(u, v, k): label}, 
+    #                             label_pos=label_pos[i % len(label_pos)])
+    #     # nx.draw_networkx_edge_labels(G, pos, label_pos=0.15, edge_labels=edge_labels)
         
         
-        # nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels)
+    #     # nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels)
 
         
-        plt.axis('off')
-        plt.title("Visualización AFN")
-        plt.show()
+    #     plt.axis('off')
+    #     plt.title("Visualización AFN")
+    #     plt.show()
 
 class RegexNode:
     """Para realizar el árbol sintáctico"""

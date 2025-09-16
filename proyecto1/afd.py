@@ -1,5 +1,5 @@
-from afn import *
-from afn import _epsilon_closure
+from proyecto1.afn import *
+from proyecto1.afn import _epsilon_closure
 
 
 def gen_label(states):
@@ -48,7 +48,7 @@ class AFD:
         self.nodes = self.start._get_transitions({self.start.label: self.start}, afn.accept)
         self.min = False
 
-    def simulate(self, text):
+    def simulate(self, text:str)->bool:
         current = self.start 
         i = 0
         while i < len(text):
@@ -133,52 +133,52 @@ class AFD:
         self.min = True
                 
     
-    def to_graph(self):
-        G = nx.MultiDiGraph()
-        stack = [self.start]
-        visited = set()
+    # def to_graph(self):
+    #     G = nx.MultiDiGraph()
+    #     stack = [self.start]
+    #     visited = set()
 
-        while stack:
-            current = stack.pop()
-            G.add_node(current.label, label='', terminal=current.accept)
+    #     while stack:
+    #         current = stack.pop()
+    #         G.add_node(current.label, label='', terminal=current.accept)
             
-            for char, state in current.transitions.items():
-                G.add_edge(current.label, state.label, label=char)
-                if state.label not in visited:
-                    if state.label != current.label:
-                        stack.append(state)
-                    visited.add(state.label)
-        return G
+    #         for char, state in current.transitions.items():
+    #             G.add_edge(current.label, state.label, label=char)
+    #             if state.label not in visited:
+    #                 if state.label != current.label:
+    #                     stack.append(state)
+    #                 visited.add(state.label)
+    #     return G
     
-    def plot(self):
-        G = self.to_graph()
-        pos = nx.spring_layout(G)
+    # def plot(self):
+    #     G = self.to_graph()
+    #     pos = nx.spring_layout(G)
         
-        node_colors = []
-        for node in G.nodes():
-            if G.nodes[node]['terminal'] and node == self.start.label:
-                node_colors.append('yellow')  # Terminal
-            elif G.nodes[node]['terminal']:
-                node_colors.append('lightcoral')  # Terminal
-            elif node == self.start.label:
-                node_colors.append('lightgreen')  # Inicio
-            else:
-                node_colors.append('skyblue')  # Estado
+    #     node_colors = []
+    #     for node in G.nodes():
+    #         if G.nodes[node]['terminal'] and node == self.start.label:
+    #             node_colors.append('yellow')  # Terminal
+    #         elif G.nodes[node]['terminal']:
+    #             node_colors.append('lightcoral')  # Terminal
+    #         elif node == self.start.label:
+    #             node_colors.append('lightgreen')  # Inicio
+    #         else:
+    #             node_colors.append('skyblue')  # Estado
         
-        nx.draw_networkx_nodes(G, pos, node_color=node_colors, node_size=300)
+    #     nx.draw_networkx_nodes(G, pos, node_color=node_colors, node_size=300)
         
         
-        nx.draw_networkx_edges(G, pos, arrowstyle='->', arrowsize=20, connectionstyle='arc3,rad=0.2')
-        label_pos = [0.3, 0.15, 0.25, 0.1, 0.2] 
-        edge_labels = {(u, v, k): d['label'] for u, v, k, d in G.edges(keys=True, data=True)}
-        for i, ((u, v, k), label) in enumerate(edge_labels.items()):
-            nx.draw_networkx_edge_labels(G, pos, {(u, v, k): label}, 
-                                label_pos=label_pos[i % len(label_pos)])
+    #     nx.draw_networkx_edges(G, pos, arrowstyle='->', arrowsize=20, connectionstyle='arc3,rad=0.2')
+    #     label_pos = [0.3, 0.15, 0.25, 0.1, 0.2] 
+    #     edge_labels = {(u, v, k): d['label'] for u, v, k, d in G.edges(keys=True, data=True)}
+    #     for i, ((u, v, k), label) in enumerate(edge_labels.items()):
+    #         nx.draw_networkx_edge_labels(G, pos, {(u, v, k): label}, 
+    #                             label_pos=label_pos[i % len(label_pos)])
 
         
-        plt.axis('off')
-        plt.title("Visualización AFD")
-        plt.show()
+    #     plt.axis('off')
+    #     plt.title("Visualización AFD")
+    #     plt.show()
 
 
 
@@ -197,11 +197,11 @@ if __name__ == "__main__":
                         print(f"Original: {line}")
                         print(f"Postfix: {postfix}")
                         nfa = regex_to_nfa(postfix)
-                        nfa.plot()
+                        # nfa.plot()
                         afd = AFD(nfa)
-                        afd.plot()
+                        # afd.plot()
                         afd.minimizing()
-                        afd.plot()
+                        # afd.plot()
                         while True:
                             try:
                                 ex = input("Expresión: ")

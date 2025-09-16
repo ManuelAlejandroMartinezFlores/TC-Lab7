@@ -17,7 +17,6 @@ def shunting_yard(regex):
     
     while i < len(regex):
         char = regex[i]
-        print(ops, output)
         
         # Handle escaped characters
         if char == '\\':
