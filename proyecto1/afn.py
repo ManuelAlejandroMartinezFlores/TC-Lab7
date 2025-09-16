@@ -1,0 +1,276 @@
+from infix2postfix import * 
+
+from collections import deque
+import networkx as nx
+import matplotlib.pyplot as plt
+
+EPSILON = "ε"
+
+from random import randint
+
+class State:
+    """Represents a state in the NFA"""
+    def __init__(self, label=None):
+        self.transitions = {}  
+        self.epsilon_transitions = set() 
+        self.id = id(self)
+        self.label =  '_'.join([label, str(self.id), str(randint(1, 999999))])
+    
+    def __repr__(self):
+        return f"State({self.label})"
+    
+def _epsilon_closure(states):
+    """Epsilon cerradura"""
+    closure = set(states)
+    stack = list(states)
+    
+    while stack:
+        state = stack.pop()
+        for eps_state in state.epsilon_transitions:
+            if eps_state not in closure:
+                closure.add(eps_state)
+                stack.append(eps_state)
+    
+    return closure
+
+class NFA:
+    """Represents an NFA with start and accept states"""
+    def __init__(self, start, accept):
+        self.start = start
+        self.accept = accept
+    
+    @staticmethod
+    def from_regex_node(node):
+        """Convert a regex parse tree to NFA using Thompson's construction"""
+        if node.value == '|':
+            nfa_left = NFA.from_regex_node(node.left)
+            nfa_right = NFA.from_regex_node(node.right)
+            
+            start = State('union_start')
+            accept = State('union_accept')
+            
+            start.epsilon_transitions.add(nfa_left.start)
+            start.epsilon_transitions.add(nfa_right.start)
+            
+            nfa_left.accept.epsilon_transitions.add(accept)
+            nfa_right.accept.epsilon_transitions.add(accept)
+            
+            return NFA(start, accept)
+        
+        elif node.value == '.':
+            nfa_left = NFA.from_regex_node(node.left)
+            nfa_right = NFA.from_regex_node(node.right)
+            
+            nfa_left.accept.epsilon_transitions.add(nfa_right.start)
+            
+            return NFA(nfa_left.start, nfa_right.accept)
+        
+        elif node.value == '*':
+            nfa_child = NFA.from_regex_node(node.left)
+            
+            start = State('star_start')
+            accept = State('star_accept')
+            
+            start.epsilon_transitions.add(nfa_child.start)
+            start.epsilon_transitions.add(accept)
+            
+            nfa_child.accept.epsilon_transitions.add(nfa_child.start)
+            nfa_child.accept.epsilon_transitions.add(accept)
+            
+            return NFA(start, accept)
+        
+        elif node.value == '+':
+            nfa_child = NFA.from_regex_node(node.left)
+            
+            start = State('plus_start')
+            accept = State('plus_accept')
+            
+            start.epsilon_transitions.add(nfa_child.start)
+            
+            nfa_child.accept.epsilon_transitions.add(nfa_child.start)
+            nfa_child.accept.epsilon_transitions.add(accept)
+            
+            return NFA(start, accept)
+        
+        elif node.value == '?':
+            nfa_child = NFA.from_regex_node(node.left)
+            
+            start = State('optional_start')
+            accept = State('optional_accept')
+            
+            start.epsilon_transitions.add(nfa_child.start)
+            start.epsilon_transitions.add(accept)
+            
+            nfa_child.accept.epsilon_transitions.add(accept)
+            
+            return NFA(start, accept)
+        elif node.value == EPSILON:
+            start = State('epsilon_start')
+            accept = State('epsilon_accept')
+            start.epsilon_transitions.add(accept)
+            return NFA(start, accept)
+        else:
+            start = State('char_start')
+            accept = State('char_accept')
+            start.transitions[node.value] = {accept}
+            return NFA(start, accept)
+    
+    def simulate(self, input_string):
+        """Simula el automata"""
+        current_states = _epsilon_closure({self.start})
+        
+        i = 0
+        while i < len(input_string):
+            char = input_string[i]
+            if char == '\\':
+                i += 1
+                char += input_string[i]
+            next_states = set()
+            for state in current_states:
+                if char in state.transitions:
+                    next_states.update(state.transitions[char])
+            
+            current_states = _epsilon_closure(next_states)
+            
+            if not current_states:
+                return False
+            i += 1
+        
+        return any(state == self.accept for state in current_states)
+    
+    
+    def to_graph(self):
+        """AFN a grafo de NetworkX"""
+        G = nx.MultiDiGraph()
+        visited = set()
+        stack = [self.start]
+        
+        while stack:
+            state = stack.pop()
+            if state.id in visited:
+                continue
+            visited.add(state.id)
+            
+            G.add_node(state.id, label="")
+            
+            # Add epsilon transitions
+            for eps_state in state.epsilon_transitions:
+                G.add_edge(state.id, eps_state.id, label=EPSILON)
+                if eps_state.id not in visited:
+                    stack.append(eps_state)
+            
+            # Add character transitions
+            for char, targets in state.transitions.items():
+                for target in targets:
+                    G.add_edge(state.id, target.id, label=char)
+                    if target.id not in visited:
+                        stack.append(target)
+        
+        return G
+    
+    def plot(self):
+        """Visualizar"""
+        G = self.to_graph()
+        
+        pos = nx.spring_layout(G)
+        
+        node_colors = []
+        for node in G.nodes():
+            if node == self.start.id:
+                node_colors.append('lightgreen')  # Inicio
+            elif node == self.accept.id:
+                node_colors.append('lightcoral')  # Terminal
+            else:
+                node_colors.append('skyblue')  # Estado
+        
+        nx.draw_networkx_nodes(G, pos, node_color=node_colors, node_size=300)
+
+        nx.draw_networkx_edges(G, pos, arrowstyle='->', arrowsize=20, connectionstyle='arc3,rad=0.2')
+        
+        label_pos = [0.3, 0.1, 0.2] 
+        edge_labels = {(u, v, k): d['label'] for u, v, k, d in G.edges(keys=True, data=True)}
+        for i, ((u, v, k), label) in enumerate(edge_labels.items()):
+            nx.draw_networkx_edge_labels(G, pos, {(u, v, k): label}, 
+                                label_pos=label_pos[i % len(label_pos)])
+        # nx.draw_networkx_edge_labels(G, pos, label_pos=0.15, edge_labels=edge_labels)
+        
+        
+        # nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels)
+
+        
+        plt.axis('off')
+        plt.title("Visualización AFN")
+        plt.show()
+
+class RegexNode:
+    """Para realizar el árbol sintáctico"""
+    def __init__(self, value, left=None, right=None):
+        self.value = value
+        self.left = left
+        self.right = right
+    
+    def __repr__(self):
+        return f"RegexNode({self.value})"
+
+def postfix_to_tree(postfix):
+    """Postfix a árbol"""
+    stack = deque()
+    
+    i = 0
+    while i < len(postfix):
+        char = postfix[i]
+        if char in ('.', '|'):  # Operadores
+            right = stack.pop()
+            left = stack.pop()
+            stack.append(RegexNode(char, left, right))
+        elif char in ('*', '+', '?'):  # Operadores unitarios
+            child = stack.pop()
+            stack.append(RegexNode(char, child))
+        elif char == '\\':
+            i += 1
+            char += postfix[i]
+            stack.append(RegexNode(char))
+        else:  # Operandos
+            stack.append(RegexNode(char))
+        i += 1
+    
+    if len(stack) != 1:
+        raise ValueError("Postfix inválido")
+    
+    return stack.pop()
+
+def regex_to_nfa(postfix_regex):
+    """Postfix a AFN"""
+    tree = postfix_to_tree(postfix_regex)
+    return NFA.from_regex_node(tree)
+
+
+
+# Example usage:
+if __name__ == "__main__":
+    filename = input("Nombre del archivo: ")
+    try:
+        with open(filename, 'r') as file:
+            for line_num, line in enumerate(file, 1):
+                line = line.strip()
+                if line:  
+                    try:
+                        validate_regex(line)
+                        postfix = shunting_yard(line)
+                        print(f"Original: {line}")
+                        print(f"Postfix: {postfix}")
+                        nfa = regex_to_nfa(postfix)
+                        # nfa.plot()
+                        while True:
+                            try:
+                                ex = input("Expresión: ")
+                                if ex == '':
+                                    break
+                                print(f'AFN: {nfa.simulate(ex)}')
+                            except Exception as e:
+                                break
+                    except ValueError as e:
+                        print(f"Expresión regular inválida: {e}")
+                    print('\n'+"="*50)
+    except FileNotFoundError:
+        print(f"Error: File '{filename}' not found.")
