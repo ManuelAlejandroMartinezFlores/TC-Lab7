@@ -1,2 +1,2 @@
-# TCProyecto1
-Teoría de la computación - Proyecto 1
+# TC-Lab7
+Teoría de la computación - Lab 7
